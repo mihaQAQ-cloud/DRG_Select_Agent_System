@@ -1,0 +1,24 @@
+# ============================================================
+# DRG 智能体系统 配置文件模板
+# 使用前请将此文件复制为 config.yaml 并填入真实配置
+# ============================================================
+
+llm:
+  base_url: "https://api.deepseek.com"   # DeepSeek 或 OpenAI 兼容地址
+  api_key: "sk-your-api-key-here"        # 替换为真实 API Key（Ollama 本地可留空）
+  timeout: 20
+  model: "deepseek-chat"
+
+# 本地 Ollama 示例：
+# llm:
+#   base_url: "http://localhost:11434"
+#   api_key: ""
+#   timeout: 60
+#   model: "qwen2.5:7b"
+
+rules:
+  path: "rules/drg_rules.json"
+
+server:
+  drg_port: 8000
+  doc_port: 8001

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医保DRG入组智能体综合平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            font-size: 14px;
+        }
+
+        /* 整体布局 */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 左侧侧边栏 */
+        .sidebar {
+            width: 240px;
+            background-color: #1f2937;
+            color: #ffffff;
+            padding-top: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-title {
+            text-align: center;
+            font-size: 18px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #374151;
+            margin: 0 20px 20px;
+            color: #38bdf8;
+        }
+
+        .menu-item {
+            padding: 14px 28px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .menu-item:hover {
+            background-color: #374151;
+        }
+
+        .menu-item.active {
+            background-color: #374151;
+            border-left-color: #38bdf8;
+            color: #38bdf8;
+        }
+
+        /* 右侧主内容区 */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .page-card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            display: none;
+        }
+
+        .page-card.active {
+            display: block;
+        }
+
+        .page-title {
+            font-size: 20px;
+            color: #1f2937;
+            margin-bottom: 25px;
+            padding-left: 12px;
+            border-left: 4px solid #38bdf8;
+        }
+
+        /* 表单通用样式 */
+        .form-row {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-row label {
+            display: inline-block;
+            width: 120px;
+            font-weight: 500;
+            color: #4b5563;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            outline: none;
+            font-size: 14px;
+            width: 280px;
+        }
+
+        .form-textarea {
+            width: 450px;
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: #38bdf8;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: 9px 22px;
+            background-color: #38bdf8;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #0ea5e9;
+        }
+
+        .btn-reset {
+            background-color: #9ca3af;
+        }
+
+        .btn-reset:hover {
+            background-color: #6b7280;
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-small {
+            padding: 4px 10px;
+            font-size: 12px;
+        }
+
+        /* 结果展示区域 - 基础样式 */
+        .result-box {
+            margin-top: 25px;
+            padding: 20px;
+            background-color: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            min-height: 120px;
+            color: #1f2937;
+            line-height: 1.6;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        /* DRG 结果专用表格样式 (新增) */
+        .drg-result-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background-color: #fff;
+        }
+
+        .drg-result-table th,
+        .drg-result-table td {
+            border: 1px solid #e5e7eb;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .drg-result-table th {
+            background-color: #f8fafc;
+            width: 140px;
+            color: #64748b;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .drg-result-table td {
+            color: #1f2937;
+        }
+
+        .drg-result-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .drg-result-table tr:hover {
+            background-color: #f1f5f9;
+        }
+
+        .tip-text {
+            color: #ef4444;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+
+        .table-box {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #e5e7eb;
+        }
+
+        th,
+        td {
+            border: 1px solid #e5e7eb;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f3f4f6;
+        }
+
+        /* 搜索栏样式 */
+        .search-bar {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- 左侧导航菜单 -->
+        <div class="sidebar">
+            <div class="sidebar-title">DRG 智能体综合平台</div>
+            <div class="menu-item active" onclick="switchPage('drg')">DRG 入组智能体</div>
+            <div class="menu-item" onclick="switchPage('docAgent')">文档生成智能体</div>
+            <div class="menu-item" onclick="switchPage('testAgent')">测试用例智能体</div>
+            <div class="menu-item" onclick="switchPage('docSystem')">虚拟文档系统</div>
+        </div>
+
+        <!-- 右侧内容区域 -->
+        <div class="main-content">
+            <!-- 1. DRG 入组智能体 页面 -->
+            <div class="page-card active" id="drg">
+                <h2 class="page-title">DRG 入组智能体</h2>
+
+                <div class="form-row">
+                    <label>患者ID：</label>
+                    <input class="form-input" type="text" id="patientId" placeholder="例：P001" value="P001">
+                </div>
+                <div class="form-row">
+                    <label>主诊断ICD编码：</label>
+                    <input class="form-input" type="text" id="mainIcd" placeholder="例：J44.1" value="J44.1">
+                </div>
+                <div class="form-row">
+                    <label>诊断名称：</label>
+                    <input class="form-input" type="text" id="mainDiagName" placeholder="选填">
+                </div>
+                <div class="form-row">
+                    <label>主手术编码：</label>
+                    <input class="form-input" type="text" id="mainOpCode" placeholder="无则留空">
+                </div>
+                <div class="form-row">
+                    <label>年龄：</label>
+                    <input class="form-input" type="number" id="age" value="65">
+                </div>
+                <div class="form-row">
+                    <label>性别：</label>
+                    <select class="form-select" id="gender">
+                        <option value="M">男 (M)</option>
+                        <option value="F">女 (F)</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <label>次诊断ICD(逗号分隔)：</label>
+                    <input class="form-input" type="text" id="secondDiag" placeholder="例：I10,E11.9">
+                </div>
+                <!-- 新增其他手术输入块 -->
+                 <div class="form-row">
+                    <label>其他手术(逗号分隔)：</label>
+                    <input class="form-input" type="text" id="secondaryOps" placeholder="例：38.93,96.71">
+                </div>
+                <div class="form-row">
+                    <button class="btn" onclick="submitDRG()">执行DRG入组</button>
+                    <button class="btn btn-reset" onclick="resetDRG()">重置表单</button>
+                    <button class="btn" style="background-color: #10b981;" onclick="loadDRGHistory()">查看历史记录</button>
+                    <button class="btn" style="background-color: #f59e0b;" onclick="reloadRules()">热更新规则</button>
+                </div>
+
+                <div class="result-box" id="drgResult">等待执行操作...</div>
+
+                <!-- 历史记录表格 -->
+                <div class="table-box" id="historyBox" style="display:none;">
+                    <h3>历史入组记录</h3>
+                    <table id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>患者ID</th>
+                                <th>MDC</th>
+                                <th>ADRG</th>
+                                <th>DRG组号</th>
+                                <th>并发症状态</th>
+                                <th>引擎模式</th>
+                                <th>时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2. 文档自动生成智能体 页面 -->
+            <div class="page-card" id="docAgent">
+                <h2 class="page-title">文档自动生成智能体</h2>
+
+                <div class="form-row">
+                    <label>系统描述：</label>
+                    <textarea class="form-textarea" id="sysDesc" readonly>医保DRG入组智能体系统是面向医疗机构的智能化分组辅助平台...</textarea>
+                </div>
+
+                <div class="form-row">
+                    <button class="btn" onclick="checkGeneratedDocs('SRS')">查看 SRS 文档</button>
+                    <button class="btn" onclick="checkGeneratedDocs('Architecture')">查看架构设计文档</button>
+                    <button class="btn" onclick="checkGeneratedDocs('TestDoc')">查看测试文档</button>
+                </div>
+
+                <div class="result-box" id="docAgentResult">
+                    点击上述按钮，系统将自动在【虚拟文档系统】中搜索对应类型的最新文档并提示下载。
+                </div>
+            </div>
+
+            <!-- 3. 测试用例生成智能体 页面 -->
+            <div class="page-card" id="testAgent">
+                <h2 class="page-title">测试用例生成智能体</h2>
+
+                <div class="form-row">
+                    <label>规则文件路径：</label>
+                    <input class="form-input" type="text" value="rules/drg_rules.json" readonly>
+                </div>
+
+                <div class="form-row">
+                    <button class="btn" onclick="checkGeneratedDocs('TestCase')">查找并下载测试用例 Excel</button>
+                </div>
+
+                <div class="result-box" id="testAgentResult">
+                    测试用例说明：
+                    1. 自动生成三类用例：正常场景、边界场景、异常场景
+                    2. 输出文件：data/outputs/test_cases.xlsx
+                    3. 包含覆盖度统计、错误用例、合法用例
+                </div>
+            </div>
+
+            <!-- 4. 虚拟文档系统 页面 -->
+            <div class="page-card" id="docSystem">
+                <h2 class="page-title">虚拟文档系统（文档管理）</h2>
+
+                <!-- 搜索栏 -->
+                <div class="search-bar">
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label>关键词搜索：</label>
+                        <input class="form-input" type="text" id="searchKeyword" placeholder="输入文档标题关键词"
+                            style="width: 200px;">
+                        <label style="width: auto; margin-left: 20px;">类型：</label>
+                        <select class="form-select" id="searchType" style="width: 150px;">
+                            <option value="">全部</option>
+                            <option value="SRS">SRS</option>
+                            <option value="Architecture">架构设计</option>
+                            <option value="TestDoc">测试文档</option>
+                            <option value="TestCase">测试用例</option>
+                        </select>
+                        <button class="btn" onclick="searchDocs()" style="margin-left: 10px;">搜索</button>
+                        <button class="btn btn-reset" onclick="loadDocList()" style="margin-left: 10px;">刷新全部</button>
+                    </div>
+                </div>
+
+                <div class="table-box">
+                    <table id="docTable">
+                        <thead>
+                            <tr>
+                                <th>文档ID</th>
+                                <th>文档类型</th>
+                                <th>文档标题</th>
+                                <th>版本</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="docTableBody">
+                            <tr>
+                                <td colspan="7">暂无数据，请点击【刷新全部】</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="result-box" id="docSystemResult" style="margin-top:20px; display:none;">接口原始数据展示区域</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局页面切换
+        function switchPage(pageId) {
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.page-card').forEach(card => card.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            // 如果切换到文档系统，自动加载列表
+            if (pageId === 'docSystem') {
+                loadDocList();
+            }
+        }
+
+        // ===================== DRG 入组智能体 逻辑 =====================
+        async function submitDRG() {
+            const patientId = document.getElementById('patientId').value.trim();
+            const mainIcd = document.getElementById('mainIcd').value.trim();
+            const mainDiagName = document.getElementById('mainDiagName').value.trim();
+            const mainOpCode = document.getElementById('mainOpCode').value.trim() || null;
+            const age = parseInt(document.getElementById('age').value);
+            const gender = document.getElementById('gender').value;
+            const secondDiagStr = document.getElementById('secondDiag').value.trim();
+            const secondaryOpsStr = document.getElementById('secondaryOps').value.trim(); // 新增
+
+            let secondaryDiags = [];
+            if (secondDiagStr) {
+                secondDiagStr.split(',').forEach(code => {
+                    if (code.trim()) secondaryDiags.push({ icd_code: code.trim(), name: "" });
+                });
+            }
+
+            // 新增：解析其他手术
+            let secondaryOps = [];
+            if (secondaryOpsStr) {
+                secondaryOps = secondaryOpsStr.split(',').map(op => op.trim()).filter(op => op !== "");
+            }
+
+            const reqData = {
+                patient_id: patientId,
+                main_diagnosis: { icd_code: mainIcd, name: mainDiagName },
+                secondary_diagnoses: secondaryDiags,
+                main_op_code: mainOpCode,
+                secondary_ops: secondaryOps, // 新增字段
+                age: age,
+                gender: gender,
+            };
+
+            const resultDom = document.getElementById('drgResult');
+            document.getElementById('historyBox').style.display = 'none';
+            resultDom.innerText = "请求中，请稍候...";
+
+            try {
+                const res = await fetch("http://localhost:8000/api/drg/classify", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(reqData)
+                });
+
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                const data = await res.json();
+
+                // --- 新增：字段中文化映射与美化渲染 ---
+
+                // 1. 定义中英文映射表
+                const fieldMap = {
+                    "patient_id": "患者ID",
+                    "mdc_code": "MDC代码",
+                    "mdc_name": "MDC名称",
+                    "adrg_code": "ADRG代码",
+                    "adrg_name": "ADRG名称",
+                    "drg_code": "DRG组号",
+                    "drg_name": "DRG名称",
+                    "cc_mcc_status": "并发症状态",
+                    "reasoning": "入组依据/说明",
+                    "engine_mode": "引擎模式",
+                    "created_at": "创建时间",
+                    "emr_id": "病历记录ID"
+                };
+
+                // 2. 构建 HTML 表格字符串
+                let tableHtml = '<table class="drg-result-table">';
+
+                // 遍历返回的数据，只展示我们关心的字段
+                for (const [key, value] of Object.entries(data)) {
+                    if (fieldMap[key]) {
+                        // 特殊处理：如果是入组说明，可能包含换行，保留格式
+                        let displayValue = value;
+                        if (key === 'reasoning') {
+                            displayValue = `<div style="white-space: pre-wrap; font-size: 13px; color: #555;">${value}</div>`;
+                        } else if (key === 'created_at') {
+                            // 格式化时间
+                            displayValue = new Date(value).toLocaleString('zh-CN');
+                        }
+
+                        tableHtml += `
+                            <tr>
+                                <th>${fieldMap[key]}</th>
+                                <td>${displayValue}</td>
+                            </tr>
+                        `;
+                    }
+                }
+                tableHtml += '</table>';
+
+                // 3. 渲染到页面
+                resultDom.innerHTML = tableHtml;
+                // ----------------------------------
+
+            } catch (err) {
+                resultDom.innerText = `请求失败！\n错误信息：${err.message}\n请检查 DRG 服务 (localhost:8000) 是否启动`;
+            }
+        }
+
+        function resetDRG() {
+            document.getElementById('patientId').value = "P001";
+            document.getElementById('mainIcd').value = "J44.1";
+            document.getElementById('mainDiagName').value = "";
+            document.getElementById('mainOpCode').value = "";
+            document.getElementById('age').value = "65";
+            document.getElementById('gender').value = "M";
+            document.getElementById('secondDiag').value = "";
+            document.getElementById('secondaryOps').value = ""; // 新增重置
+            document.getElementById('drgResult').innerText = "等待执行操作...";
+            document.getElementById('historyBox').style.display = 'none';
+        }
+
+        // 新增：加载历史记录
+        async function loadDRGHistory() {
+            const resultDom = document.getElementById('drgResult');
+            const historyBox = document.getElementById('historyBox');
+            const tbody = document.getElementById('historyTableBody');
+
+            resultDom.innerText = "正在加载历史记录...";
+
+            try {
+                const res = await fetch("http://localhost:8000/api/drg/results?limit=20");
+                const data = await res.json();
+
+                if (data.records && data.records.length > 0) {
+                    let html = "";
+                    data.records.forEach(r => {
+                        html += `
+                        <tr>
+                            <td>${r.id}</td>
+                            <td>${r.patient_id}</td>
+                            <td>${r.mdc_code}</td>
+                            <td>${r.adrg_code}</td>
+                            <td>${r.drg_code}</td>
+                            <td>${r.cc_mcc_status}</td>
+                            <td>${r.engine_mode}</td>
+                            <td>${new Date(r.created_at).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    tbody.innerHTML = html;
+                    historyBox.style.display = 'block';
+                    resultDom.innerText = `已加载最近 ${data.records.length} 条记录`;
+                } else {
+                    resultDom.innerText = "暂无历史记录";
+                    historyBox.style.display = 'none';
+                }
+            } catch (err) {
+                resultDom.innerText = `加载失败: ${err.message}`;
+            }
+        }
+
+        // 新增：热更新规则
+        async function reloadRules() {
+            const resultDom = document.getElementById('drgResult');
+            resultDom.innerText = "正在请求热更新规则...";
+            try {
+                const res = await fetch("http://localhost:8000/api/drg/reload");
+                const data = await res.json();
+                resultDom.innerText = JSON.stringify(data, null, 2);
+            } catch (err) {
+                resultDom.innerText = `更新失败: ${err.message}`;
+            }
+        }
+
+        // ===================== 文档与测试智能体 逻辑 =====================
+        // 通过搜索虚拟文档系统来“实现”查看功能
+        async function checkGeneratedDocs(type) {
+            const resDom = type === 'TestCase' ? document.getElementById('testAgentResult') : document.getElementById('docAgentResult');
+            resDom.innerText = `正在虚拟文档系统中搜索 ${type} 类型的文档...`;
+
+            try {
+                // 调用搜索接口
+                const res = await fetch(`http://localhost:8001/api/docs/search?doc_type=${type}`);
+                const data = await res.json();
+
+                if (data.results && data.results.length > 0) {
+                    const doc = data.results[0]; // 取最新的一个
+                    resDom.innerHTML = `
+                        <strong>找到文档：</strong><br>
+                        标题: ${doc.title}<br>
+                        ID: ${doc.id}<br>
+                        创建时间: ${doc.created_at}<br>
+                        <br>
+                        <button class="btn" onclick="downloadDoc('${doc.id}')">点击下载该文档</button>
+                    `;
+                } else {
+                    resDom.innerText = `未在虚拟文档系统中找到类型为 ${type} 的文档。\n请确认 main.py 已成功启动并完成了初始化生成任务。`;
+                }
+            } catch (err) {
+                resDom.innerText = `搜索失败: ${err.message}`;
+            }
+        }
+
+        // ===================== 虚拟文档系统 逻辑 =====================
+        async function loadDocList() {
+            renderDocTable("http://localhost:8001/api/docs/list");
+        }
+
+        async function searchDocs() {
+            const keyword = document.getElementById('searchKeyword').value.trim();
+            const type = document.getElementById('searchType').value;
+
+            let url = `http://localhost:8001/api/docs/search?keyword=${keyword}`;
+            if (type) url += `&doc_type=${type}`;
+
+            renderDocTable(url);
+        }
+
+        async function renderDocTable(apiUrl) {
+            const tableBody = document.getElementById('docTableBody');
+            const resDom = document.getElementById('docSystemResult');
+            tableBody.innerHTML = '<tr><td colspan="7">加载中...</td></tr>';
+            resDom.style.display = 'none';
+
+            try {
+                const res = await fetch(apiUrl);
+                const data = await res.json();
+
+                // 兼容 list 接口返回数组，search 接口返回 {results: []}
+                const list = Array.isArray(data) ? data : (data.results || []);
+
+                if (list.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="7">暂无匹配数据</td></tr>';
+                    return;
+                }
+
+                let html = "";
+                list.forEach(item => {
+                    html += `
+                    <tr>
+                        <td>${item.id}</td>
+                        <td>${item.doc_type}</td>
+                        <td>${item.title}</td>
+                        <td>${item.version}</td>
+                        <td>${item.status}</td>
+                        <td>${new Date(item.created_at).toLocaleString()}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="downloadDoc('${item.id}')">下载</button>
+                            <button class="btn btn-small btn-danger" onclick="deleteDoc('${item.id}')">删除</button>
+                        </td>
+                    </tr>
+                    `;
+                });
+                tableBody.innerHTML = html;
+            } catch (err) {
+                tableBody.innerHTML = '<tr><td colspan="7">加载失败，请检查 8001 端口服务</td></tr>';
+            }
+        }
+
+        // 新增：下载文档
+        function downloadDoc(docId) {
+            window.open(`http://localhost:8001/api/docs/${docId}/download`, '_blank');
+        }
+
+        // 新增：删除文档
+        async function deleteDoc(docId) {
+            if (!confirm(`确定要删除文档 ${docId} 吗？此操作不可恢复。`)) return;
+
+            try {
+                const res = await fetch(`http://localhost:8001/api/docs/${docId}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    alert("删除成功");
+                    loadDocList(); // 刷新列表
+                } else {
+                    alert("删除失败");
+                }
+            } catch (err) {
+                alert(`请求错误: ${err.message}`);
+            }
+        }
+    </script>
+</body>
+
+</html>
